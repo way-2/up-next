@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { FlatList } from "react-native";
-import { Button, ListItem } from "react-native-elements";
+import { useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
+import { Button, Image, ListItem } from "react-native-elements";
 import ListItemSwipeable from "react-native-elements/dist/list/ListItemSwipeable";
 import databaseService from "./services/databaseService";
 import { useFocusEffect } from "@react-navigation/native";
@@ -23,7 +23,6 @@ export default function Index() {
     setLoading(true);
     await db.initialize();
     await db.getAllRows().then((result) => {
-      console.log(result)
       return setItems(result);
     }).catch((res) =>
       console.log(res)
@@ -39,6 +38,12 @@ export default function Index() {
     );
   }
 
+  async function updateUpNext(id: string) {
+    await db.increaseUpNextCount(id).finally(() => 
+      setup()
+    );
+  }
+
   function buildListItem(item: {
     id: string;
     title: string;
@@ -46,16 +51,13 @@ export default function Index() {
     currentSeason: number;
     totalEpisodes: number;
     upNextEpisodeOutOfTotal: number;
+    imagePath: string;
   }):
     | import("react").ReactElement<
         any,
         string | import("react").JSXElementConstructor<any>
       >
     | null {
-
-    function updateUpNext(): void {
-      throw new Error("Function not implemented.");
-    }
 
     return (
       <ListItemSwipeable
@@ -70,16 +72,19 @@ export default function Index() {
         rightContent={
           <Button
             title="Update Up Next"
-            onPress={() => updateUpNext()}
+            onPress={() => updateUpNext(item.id)}
             icon={{ name: "arrow-upward", color: "white" }}
             buttonStyle={{ minHeight: "100%", backgroundColor: "red" }}
           />
         }
       >
-        <ListItem.Content>
-          <ListItem.Title>{item.title}</ListItem.Title>
-          <ListItem.Subtitle>Up Next Season {item.currentSeason} Episode {item.upNextEpisode} {"\n"}
-            Episode {item.upNextEpisodeOutOfTotal} out of {item.totalEpisodes} episodes</ListItem.Subtitle>
+        <ListItem.Content style={styles.listItemContentContainer}>
+          <Image style={styles.image} source={{ uri: item.imagePath }} />
+          <View style={styles.listItemContentTextContainer}>
+            <ListItem.Title style={styles.listItemText}>{item.title}</ListItem.Title>
+            <ListItem.Subtitle style={styles.listItemText}>Up Next Season {item.currentSeason} Episode {item.upNextEpisode} {"\n"}
+              Episode {item.upNextEpisodeOutOfTotal} out of {item.totalEpisodes} episodes</ListItem.Subtitle>
+          </View>
         </ListItem.Content>
       </ListItemSwipeable>
     );
@@ -89,6 +94,42 @@ export default function Index() {
     <FlatList
       data={items}
       renderItem={({ item }) => buildListItem(item)}
+      ItemSeparatorComponent={() => <View style={styles.seperator} />}
+      contentContainerStyle={{padding: 4, margin: 0}}
+      ListEmptyComponent={null}
+      ListHeaderComponent={null}
+      ListFooterComponent={null}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  listItemContentContainer: {
+    width: "100%",
+    display: 'flex',
+    flexDirection: 'row',
+    flex: 1,
+    flexWrap: 'nowrap',
+    alignItems: 'flex-start',
+    paddingStart: 0
+  },
+  seperator: {
+    height: 2,
+  },
+  image: {
+    display: 'flex',
+    padding: 0,
+    width: 80,
+    height: 120,
+  },
+  listItemContentTextContainer: {
+    height: '100%',
+    paddingStart: 10,
+    display: 'flex',
+    flex: .8,
+    alignSelf: 'center'
+  },
+  listItemText: {
+    
+  }
+})
