@@ -6,7 +6,7 @@ import { useState } from "react";
 import { searchTv, tvInfo } from "./services/tmdbService";
 import { TvResult } from "moviedb-promise";
 import { Dropdown } from "react-native-element-dropdown";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React from "react";
 import { useDebounce } from "use-debounce";
 import WheelPicker from "@quidone/react-native-wheel-picker";
@@ -14,6 +14,7 @@ import WheelPicker from "@quidone/react-native-wheel-picker";
 export default function AddItemModalScreen() {
   const db = new databaseService();
   db.initialize();
+  const navigation = useNavigation();
   const [id, setId] = useState("");
   const [title, setTitle] = useState("");
   const [upNextEpisode, setUpNextEpisode] = useState(0);
@@ -157,7 +158,8 @@ export default function AddItemModalScreen() {
             mapToJson(seasonsInfo)
           )
             .then((res) => console.log(res))
-            .catch((res) => console.log(res));
+            .catch((res) => console.log(res))
+            .finally(() => navigation.goBack());
         }}
       />
       {/* Use a light status bar on iOS to account for the black space above the modal */}

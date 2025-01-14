@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { Button, Image, ListItem } from "react-native-elements";
 import ListItemSwipeable from "react-native-elements/dist/list/ListItemSwipeable";
@@ -14,37 +14,44 @@ export default function Index() {
   const [refreshData, setRefreshData] = useState(true);
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
     setup();
   }, [!loading && refreshData]));
 
   async function setup() {
     setRefreshData(true);
     setLoading(true);
-    await db.initialize();
-    await db.getAllRows().then((result) => {
-      return setItems(result);
-    }).catch((res) =>
-      console.log(res)
-    ).finally(() => 
-      setRefreshData(false)
-    );
-    setLoading(false);
+    try {
+      await db.initialize();
+      const result = await db.getAllRows();
+      setItems(result);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRefreshData(false);
+      setLoading(false);
+    }
   }
 
   async function removeItem(id: string) {
-    await db.deleteRecord(id).finally(() => 
-      setup()
-    );
+    try {
+      await db.deleteRecord(id);
+      setup();
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async function updateUpNext(id: string) {
-    await db.increaseUpNextCount(id).finally(() => 
-      setup()
-    );
+    try {
+      await db.increaseUpNextCount(id);
+      setup();
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function buildListItem(item: {
+  const buildListItem = (item: {
     id: string;
     title: string;
     upNextEpisode: number;
@@ -52,14 +59,7 @@ export default function Index() {
     totalEpisodes: number;
     upNextEpisodeOutOfTotal: number;
     imagePath: string;
-  }):
-    | import("react").ReactElement<
-        any,
-        string | import("react").JSXElementConstructor<any>
-      >
-    | null {
-
-    return (
+  }) => (
       <ListItemSwipeable
         leftContent={
           <Button
@@ -88,7 +88,6 @@ export default function Index() {
         </ListItem.Content>
       </ListItemSwipeable>
     );
-  }
 
   return (
     <FlatList
@@ -96,9 +95,6 @@ export default function Index() {
       renderItem={({ item }) => buildListItem(item)}
       ItemSeparatorComponent={() => <View style={styles.seperator} />}
       contentContainerStyle={{padding: 4, margin: 0}}
-      ListEmptyComponent={null}
-      ListHeaderComponent={null}
-      ListFooterComponent={null}
     />
   );
 }
@@ -129,7 +125,4 @@ const styles = StyleSheet.create({
     flex: .8,
     alignSelf: 'center'
   },
-  listItemText: {
-    
-  }
 })
