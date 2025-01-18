@@ -9,9 +9,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#4E98FF"
     },
     "ios": {
       "supportsTablet": true
@@ -19,8 +19,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "monochromeImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#4E98FF"
+      },
+      "package": "com.way2.upnext"
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +35,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "4a447c8b-2b32-4ccf-ae69-2766866190b3"
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Button, Image, ListItem } from "react-native-elements";
 import ListItemSwipeable from "react-native-elements/dist/list/ListItemSwipeable";
 import databaseService from "./services/databaseService";
@@ -7,6 +7,9 @@ import { useFocusEffect } from "@react-navigation/native";
 import React from "react";
 
 export default function Index() {
+  const colorScheme = useColorScheme();
+  const themeTextStyle = colorScheme === 'light' ? styles.lightThemeText : styles.darkThemeText;
+  const themeContainerStyle = colorScheme === 'light' ? styles.lightThemeContainer : styles.darkThemeContainer;
   const db = new databaseService();
   db.initialize();
   const [loading, setLoading] = useState(false);
@@ -61,6 +64,7 @@ export default function Index() {
     imagePath: string;
   }) => (
       <ListItemSwipeable
+      containerStyle={themeContainerStyle}
         leftContent={
           <Button
             title="Remove"
@@ -78,11 +82,11 @@ export default function Index() {
           />
         }
       >
-        <ListItem.Content style={styles.listItemContentContainer}>
+        <ListItem.Content style={[styles.listItemContentContainer, themeContainerStyle]}>
           <Image style={styles.image} source={{ uri: item.imagePath }} />
           <View style={styles.listItemContentTextContainer}>
-            <ListItem.Title style={styles.listItemText}>{item.title}</ListItem.Title>
-            <ListItem.Subtitle style={styles.listItemText}>Up Next Season {item.currentSeason} Episode {item.upNextEpisode} {"\n"}
+            <ListItem.Title style={themeTextStyle}>{item.title}</ListItem.Title>
+            <ListItem.Subtitle style={themeTextStyle}>Up Next Season {item.currentSeason} Episode {item.upNextEpisode} {"\n"}
               Episode {item.upNextEpisodeOutOfTotal} out of {item.totalEpisodes} episodes</ListItem.Subtitle>
           </View>
         </ListItem.Content>
@@ -118,6 +122,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 120,
   },
+  lightThemeText: {
+    color: 'black',
+  },
+  darkThemeText: {
+    color: 'white'
+  },
   listItemContentTextContainer: {
     height: '100%',
     paddingStart: 10,
@@ -125,4 +135,12 @@ const styles = StyleSheet.create({
     flex: .8,
     alignSelf: 'center'
   },
+  lightThemeContainer: {
+    color: 'white',
+    backgroundColor: 'white',
+  },
+  darkThemeContainer: {
+    backgroundColor: 'grey',
+    color: 'grey',
+  }
 })

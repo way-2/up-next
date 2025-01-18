@@ -4,17 +4,13 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import {
-  StyleSheet,
-  View
-  } from 'react-native';
+import { StyleSheet  } from 'react-native';
 import { useEffect } from "react";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
 import { useColorScheme } from "./components/useColorScheme";
 import { Header, Icon } from "react-native-elements";
 import { SQLiteProvider } from "expo-sqlite";
-import AddItemModalScreen from "./addItemModal";
 
 export {
   // Catch any errors thrown by the Layout component.

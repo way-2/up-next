@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
-import { Platform, StyleSheet, View, Text } from "react-native";
-import { Button, Icon, Input } from "react-native-elements";
+import { Platform, StyleSheet, View, Text, useColorScheme } from "react-native";
+import { Button, Icon } from "react-native-elements";
 import databaseService from "./services/databaseService";
 import { useState } from "react";
 import { searchTv, tvInfo } from "./services/tmdbService";
@@ -12,6 +12,9 @@ import { useDebounce } from "use-debounce";
 import WheelPicker from "@quidone/react-native-wheel-picker";
 
 export default function AddItemModalScreen() {
+  const colorScheme = useColorScheme();
+  const themeTextStyle = colorScheme === 'light' ? styles.lightThemeText : styles.darkThemeText;
+  const themeContainerStyle = colorScheme === 'light' ? styles.lightThemeContainer : styles.darkThemeContainer;
   const db = new databaseService();
   db.initialize();
   const navigation = useNavigation();
@@ -92,10 +95,12 @@ export default function AddItemModalScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Add an Item</Text>
       <Dropdown
-        style={styles.dropdown}
-        placeholderStyle={styles.placeholderStyle}
-        selectedTextStyle={styles.selectedTextStyle}
-        inputSearchStyle={styles.inputSearchStyle}
+        style={[styles.dropdown, themeContainerStyle]}
+        placeholderStyle={[styles.placeholderStyle, themeTextStyle]}
+        selectedTextStyle={[styles.selectedTextStyle, themeTextStyle]}
+        inputSearchStyle={[styles.inputSearchStyle, themeTextStyle]}
+        containerStyle={themeContainerStyle}
+        itemContainerStyle={themeContainerStyle}
         iconStyle={styles.iconStyle}
         data={searchResults}
         search={true}
@@ -117,8 +122,9 @@ export default function AddItemModalScreen() {
           <Text>Current Season</Text>
           <WheelPicker
             width={50}
-            style={styles.wheelPicker}
-            overlayItemStyle={styles.wheelPickerOverlay}
+            style={[styles.wheelPicker, themeContainerStyle]}
+            overlayItemStyle={[styles.wheelPickerOverlay, themeTextStyle]}
+            itemTextStyle={themeTextStyle}
             visibleItemCount={3}
             data={pickerSeasons}
             onValueChanged={(value) => {
@@ -131,8 +137,9 @@ export default function AddItemModalScreen() {
           <Text>Current Episode</Text>
           <WheelPicker
             width={50}
-            style={styles.wheelPicker}
-            overlayItemStyle={styles.wheelPickerOverlay}
+            style={[styles.wheelPicker, themeContainerStyle]}
+            overlayItemStyle={[styles.wheelPickerOverlay, themeTextStyle]}
+            itemTextStyle={themeTextStyle}
             visibleItemCount={3}
             data={pickerEpisodes}
             onValueChanged={(value) => {
@@ -219,9 +226,31 @@ const styles = StyleSheet.create({
     flex: 0.5,
     paddingHorizontal: 8,
   },
-  wheelPicker: {},
-  wheelPickerOverlay: {},
+  wheelPicker: {
+    borderRadius: 10,
+  },
+  wheelPickerOverlay: {
+    borderRadius: 10,
+    borderWidth: 4,
+    opacity: .25
+  },
   buttonStyle: {
     width: 100,
   },
+  lightThemeText: {
+    color: 'black',
+    borderColor: 'black'
+  },
+  darkThemeText: {
+    color: 'white',
+    borderColor: 'white'
+  },
+  lightThemeContainer: {
+    color: 'white',
+    backgroundColor: 'white',
+  },
+  darkThemeContainer: {
+    backgroundColor: 'grey',
+    color: 'grey',
+  }
 });
