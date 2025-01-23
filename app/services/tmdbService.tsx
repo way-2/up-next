@@ -1,29 +1,9 @@
-import { MovieDb, SearchTvRequest } from 'moviedb-promise'
+import { Configuration, DefaultApi } from "../generated-sources/openapi";
 
-const moviedb = new MovieDb('a673e31e9cf5e6a2cb63009e59beabeb')
-
-const newError = (name) => {
-  const e = new Error(name)
-  e.name = name
-  return Promise.reject(e)
-}
-
-export const searchTv = async (req: SearchTvRequest) => {
-  try {
-    const res = await moviedb.searchTv(req);
-    return res.results;
-  } catch (error) {
-    console.log(error);
-    return newError(error);
-  }
-}
-
-export const tvInfo = async (id) => {
-  try {
-    const res = await moviedb.tvInfo(id);
-    return res;
-  } catch (error) {
-    console.log(error);
-    return newError(error);
-  }
+export default function getTmdbService(): DefaultApi {
+    const configuration = new Configuration({
+        apiKey: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhNjczZTMxZTljZjVlNmEyY2I2MzAwOWU1OWJlYWJlYiIsIm5iZiI6MTczNjc2OTUwNy42MTMsInN1YiI6IjY3ODRmZmUzMTQzMWUwNTkxYWJiYWVhOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ZdOB_AyZdNj-aWOsErtD56XMOW9HoLb26DqN6BgopqY"
+      });
+      const tmdbApi = new DefaultApi(configuration);
+      return tmdbApi;
 }

@@ -3,31 +3,38 @@ import { Platform, StyleSheet, View, Text, useColorScheme } from "react-native";
 import { Button, Icon } from "react-native-elements";
 import databaseService from "./services/databaseService";
 import { useState } from "react";
-import { searchTv, tvInfo } from "./services/tmdbService";
-import { TvResult } from "moviedb-promise";
 import { Dropdown } from "react-native-element-dropdown";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React from "react";
 import { useDebounce } from "use-debounce";
 import WheelPicker from "@quidone/react-native-wheel-picker";
+import getTmdbService from "./services/tmdbService";
+import { calcEpisodeOfTotal, mapToJson } from "./util/utilMethods";
 
 export default function AddItemModalScreen() {
   const colorScheme = useColorScheme();
-  const themeTextStyle = colorScheme === 'light' ? styles.lightThemeText : styles.darkThemeText;
-  const themeContainerStyle = colorScheme === 'light' ? styles.lightThemeContainer : styles.darkThemeContainer;
+  const themeTextStyle =
+    colorScheme === "light" ? styles.lightThemeText : styles.darkThemeText;
+  const themeContainerStyle =
+    colorScheme === "light"
+      ? styles.lightThemeContainer
+      : styles.darkThemeContainer;
   const db = new databaseService();
   db.initialize();
+  const tmdbApi = getTmdbService();
   const navigation = useNavigation();
-  const [id, setId] = useState("");
+  const [id, setId] = useState(0);
   const [title, setTitle] = useState("");
-  const [upNextEpisode, setUpNextEpisode] = useState(0);
-  const [currentSeason, setCurrentSeason] = useState(0);
+  const [upNextEpisode, setUpNextEpisode] = useState(1);
+  const [currentSeason, setCurrentSeason] = useState(1);
   const [totalEpisodes, setTotalEpisodes] = useState(0);
   const [upNextEpisodeOutOfTotal, setUpNextEpisodeOutOfTotal] = useState(0);
-  const [searchResults, setSearchResults] = useState<TvResult[]>([]);
+  const [searchResults, setSearchResults] = useState<Object[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 200);
-  const [seasonsInfo, setSeasonsInfo] = useState<Map<number, number[]>>(new Map());
+  const [seasonsInfo, setSeasonsInfo] = useState<Map<number, number[]>>(
+    new Map()
+  );
   const [imagePath, setImagePath] = useState("");
   const pickerSeasons = Array.from(seasonsInfo.keys()).map((index) => ({
     value: index,
@@ -50,18 +57,24 @@ export default function AddItemModalScreen() {
 
   async function handleSearch() {
     if (debouncedSearchTerm) {
-      // Perform your search logic here using the 'text' variable
-      const res = await searchTv({ query: debouncedSearchTerm });
-      setSearchResults(res);
+      await tmdbApi.searchTv(debouncedSearchTerm).then((res) => {
+        console.log(res);
+        if (res.status === 200 && res.data.results != undefined) {
+          setSearchResults(res.data.results);
+        }
+      }).catch((ex) => console.log(ex));
     }
   }
 
-  async function handleSelect(item: { id: React.SetStateAction<string>; name: React.SetStateAction<string>; }) {
+  async function handleSelect(item: {
+    id: number;
+    name: string;
+  }) {
     setId(item.id);
     setTitle(item.name);
-    const res = await tvInfo(item.id);
+    const res = await tmdbApi.tvSeriesDetails(item.id);
     var tempSeasons = new Map();
-    res.seasons?.forEach((season) => {
+    res.data.seasons?.forEach((season) => {
       if (season.season_number !== undefined && season.season_number > 0) {
         var tempEpisodes = [...Array(season.episode_count).keys()].map(
           (foo) => foo + 1
@@ -70,25 +83,8 @@ export default function AddItemModalScreen() {
       }
     });
     setSeasonsInfo(tempSeasons);
-    setTotalEpisodes(res.number_of_episodes ?? 0);
-    setImagePath("https://image.tmdb.org/t/p/w500/" + res.poster_path);
-  }
-
-  function calcEpisodeOfTotal() {
-    let epOfTotal = 0;
-    for (let [season, episodes] of seasonsInfo.entries()) {
-      if (season < currentSeason) {
-        epOfTotal += episodes.length;
-      } else if (season === currentSeason) {
-        epOfTotal += upNextEpisode;
-        break;
-      }
-    }
-    return epOfTotal;
-  }
-
-  function mapToJson(map: Map<any, any>) {
-    return JSON.stringify(Object.fromEntries(map));
+    setTotalEpisodes(res.data.number_of_episodes ?? 0);
+    setImagePath("https://image.tmdb.org/t/p/w500/" + res.data.poster_path);
   }
 
   return (
@@ -129,7 +125,7 @@ export default function AddItemModalScreen() {
             data={pickerSeasons}
             onValueChanged={(value) => {
               setCurrentSeason(parseInt(value.item.label));
-              setUpNextEpisodeOutOfTotal(calcEpisodeOfTotal());
+              setUpNextEpisodeOutOfTotal(calcEpisodeOfTotal(seasonsInfo, currentSeason, upNextEpisode));
             }}
           />
         </View>
@@ -144,7 +140,7 @@ export default function AddItemModalScreen() {
             data={pickerEpisodes}
             onValueChanged={(value) => {
               setUpNextEpisode(parseInt(value.item.label));
-              setUpNextEpisodeOutOfTotal(calcEpisodeOfTotal());
+              setUpNextEpisodeOutOfTotal(calcEpisodeOfTotal(seasonsInfo, currentSeason, upNextEpisode));
             }}
           />
         </View>
@@ -232,25 +228,25 @@ const styles = StyleSheet.create({
   wheelPickerOverlay: {
     borderRadius: 10,
     borderWidth: 4,
-    opacity: .25
+    opacity: 0.25,
   },
   buttonStyle: {
     width: 100,
   },
   lightThemeText: {
-    color: 'black',
-    borderColor: 'black'
+    color: "black",
+    borderColor: "black",
   },
   darkThemeText: {
-    color: 'white',
-    borderColor: 'white'
+    color: "white",
+    borderColor: "white",
   },
   lightThemeContainer: {
-    color: 'white',
-    backgroundColor: 'white',
+    color: "white",
+    backgroundColor: "white",
   },
   darkThemeContainer: {
-    backgroundColor: 'grey',
-    color: 'grey',
-  }
+    backgroundColor: "grey",
+    color: "grey",
+  },
 });

@@ -13,21 +13,23 @@ export default class databaseService {
     await this.db.execAsync(`
         PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS upNext (
-          id TEXT PRIMARY KEY NOT NULL,
+          id INTEGER PRIMARY KEY NOT NULL,
           title TEXT NOT NULL,
           upNextEpisode INTEGER,
           currentSeason INTEGER,
           totalEpisodes INTEGER,
           upNextEpisodeOutOfTotal INTEGER,
           imagePath TEXT,
-          seasonsInfo TEXT
+          seasonsInfo TEXT,
+          orderMarker INTEGER,
+          type TEXT
         );
       `);
   }
 
   // Insert a new record
   async insertRecord(
-    id: string,
+    id: number,
     title: string,
     upNextEpisode: number,
     currentSeason: number,
@@ -49,6 +51,29 @@ export default class databaseService {
     );
     return result;
   }
+
+  async updateRecord(
+    id: number,
+    title: string,
+    upNextEpisode: number,
+    currentSeason: number,
+    totalEpisodes: number,
+    upNextEpisodeOutOfTotal: number,
+    imagePath: string,
+    seasonsInfo: string) {
+      const result = await this.db.runAsync(
+        "UPDATE upNext SET title = ?, upNextEpisode = ?, currentSeason = ?, totalEpisodes = ?, upNextEpisodeOutOfTotal = ?, imagePath = ?, seasonsInfo = ? WHERE id = ?",
+        title,
+        upNextEpisode,
+        currentSeason,
+        totalEpisodes,
+        upNextEpisodeOutOfTotal,
+        imagePath,
+        seasonsInfo,
+        id
+      );
+      return result;
+    }
 
   // Delete a record
   async deleteRecord(id: string) {
@@ -102,8 +127,8 @@ export default class databaseService {
   }
 }
 
-interface dbItem {
-  id: string;
+export interface dbItem {
+  id: number;
   title: string;
   upNextEpisode: number;
   currentSeason: number;
