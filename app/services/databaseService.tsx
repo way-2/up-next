@@ -21,8 +21,8 @@ export default class databaseService {
           upNextEpisodeOutOfTotal INTEGER,
           imagePath TEXT,
           seasonsInfo TEXT,
-          orderMarker INTEGER,
-          type TEXT
+          type TEXT,
+          isVisible BOOLEAN
         );
       `);
   }
@@ -36,10 +36,11 @@ export default class databaseService {
     totalEpisodes: number,
     upNextEpisodeOutOfTotal: number,
     imagePath: string,
-    seasonsInfo: string
+    seasonsInfo: string,
+    type: string
   ) {
     const result = await this.db.runAsync(
-      "INSERT INTO upNext (id, title, upNextEpisode, currentSeason, totalEpisodes, upNextEpisodeOutOfTotal, imagePath, seasonsInfo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO upNext (id, title, upNextEpisode, currentSeason, totalEpisodes, upNextEpisodeOutOfTotal, imagePath, seasonsInfo, type, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       id,
       title,
       upNextEpisode,
@@ -47,7 +48,9 @@ export default class databaseService {
       totalEpisodes,
       upNextEpisodeOutOfTotal,
       imagePath,
-      seasonsInfo
+      seasonsInfo,
+      type,
+      true
     );
     return result;
   }
@@ -60,20 +63,31 @@ export default class databaseService {
     totalEpisodes: number,
     upNextEpisodeOutOfTotal: number,
     imagePath: string,
-    seasonsInfo: string) {
-      const result = await this.db.runAsync(
-        "UPDATE upNext SET title = ?, upNextEpisode = ?, currentSeason = ?, totalEpisodes = ?, upNextEpisodeOutOfTotal = ?, imagePath = ?, seasonsInfo = ? WHERE id = ?",
-        title,
-        upNextEpisode,
-        currentSeason,
-        totalEpisodes,
-        upNextEpisodeOutOfTotal,
-        imagePath,
-        seasonsInfo,
-        id
-      );
-      return result;
-    }
+    seasonsInfo: string,
+    isVisible: boolean
+  ) {
+    const result = await this.db.runAsync(
+      "UPDATE upNext SET title = ?, upNextEpisode = ?, currentSeason = ?, totalEpisodes = ?, upNextEpisodeOutOfTotal = ?, imagePath = ?, seasonsInfo = ?, isVisible: ? WHERE id = ?",
+      title,
+      upNextEpisode,
+      currentSeason,
+      totalEpisodes,
+      upNextEpisodeOutOfTotal,
+      imagePath,
+      seasonsInfo,
+      isVisible,
+      id
+    );
+    return result;
+  }
+
+  async updateVisibility(id: number, isVisible: boolean) {
+    await this.db.runAsync(
+      "UPDATE upNext SET isVisible= ? WHERE id = ?",
+      isVisible,
+      id
+    );
+  }
 
   // Delete a record
   async deleteRecord(id: string) {
@@ -115,7 +129,7 @@ export default class databaseService {
 
       //Update the record in the database
       await this.db.runAsync(
-        'UPDATE upNext SET upNextEpisode = ?, currentSeason = ?, upNextEpisodeOutOfTotal = ? WHERE id = ?',
+        "UPDATE upNext SET upNextEpisode = ?, currentSeason = ?, upNextEpisodeOutOfTotal = ? WHERE id = ?",
         item.upNextEpisode,
         item.currentSeason,
         item.upNextEpisodeOutOfTotal,
@@ -136,4 +150,7 @@ export interface dbItem {
   upNextEpisodeOutOfTotal: number;
   imagePath: string;
   seasonsInfo: string;
+  isVisible: boolean,
+  type: string, 
+  orderMarker: number
 }

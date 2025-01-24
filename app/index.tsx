@@ -77,6 +77,7 @@ export default function Index() {
     totalEpisodes: number;
     upNextEpisodeOutOfTotal: number;
     imagePath: string;
+    isVisible: boolean,
   }) => (
     <ListItemSwipeable
       containerStyle={themeContainerStyle}
@@ -142,7 +143,7 @@ export default function Index() {
           onRefresh={refreshDataFromTmdb}
         />
       }
-      data={items}
+      data={items.filter(item => item.isVisible)}
       renderItem={({ item }) => buildListItem(item)}
       ItemSeparatorComponent={() => <View style={styles.seperator} />}
       contentContainerStyle={{ padding: 4, margin: 0 }}
@@ -195,5 +196,11 @@ const styles = StyleSheet.create({
   },
   subHeaderText: {
     fontSize: 14
+  },
+  show: {
+    visibility: 'Visible'
+  },
+  hide: {
+    visibility: 'Hidden'
   }
 });

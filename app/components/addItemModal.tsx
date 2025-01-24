@@ -1,15 +1,15 @@
 import { StatusBar } from "expo-status-bar";
 import { Platform, StyleSheet, View, Text, useColorScheme } from "react-native";
 import { Button, Icon } from "react-native-elements";
-import databaseService from "./services/databaseService";
+import databaseService from "../services/databaseService";
 import { useState } from "react";
 import { Dropdown } from "react-native-element-dropdown";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React from "react";
 import { useDebounce } from "use-debounce";
 import WheelPicker from "@quidone/react-native-wheel-picker";
-import getTmdbService from "./services/tmdbService";
-import { calcEpisodeOfTotal, mapToJson } from "./util/utilMethods";
+import getTmdbService from "../services/tmdbService";
+import { calcEpisodeOfTotal, mapToJson } from "../util/utilMethods";
 
 export default function AddItemModalScreen() {
   const colorScheme = useColorScheme();
@@ -158,7 +158,8 @@ export default function AddItemModalScreen() {
             totalEpisodes,
             upNextEpisodeOutOfTotal,
             imagePath,
-            mapToJson(seasonsInfo)
+            mapToJson(seasonsInfo),
+            "tv"
           )
             .then((res) => console.log(res))
             .catch((res) => console.log(res))
