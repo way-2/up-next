@@ -7,7 +7,7 @@ import { calcEpisodeOfTotal, mapToJson } from "../util/utilMethods";
  * @returns {DefaultApi} An instance of the TMDB API service.
  */
 export default function getTmdbService(): DefaultApi {
-  const apiKey = process.env.TMDB_API_KEY;
+  const apiKey = process.env.TMDB_API_KEY??process.env.EXPO_PUBLIC_TMDB_API_KEY;
   const configuration = new Configuration({
     apiKey: `Bearer ${apiKey}`
   })

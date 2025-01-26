@@ -88,7 +88,7 @@ export default function Index() {
   const buildListItem = (item: upNextTableItem) => {
     if (!item) return null;
     return (
-      <ListItemSwipeable
+      <ListItem.Swipeable
         containerStyle={themeContainerStyle}
         leftContent={
           <Button
@@ -110,18 +110,18 @@ export default function Index() {
         <ListItem.Content style={styles.listItemContentContainer}>
           <Image style={[styles.image,themeImageBorderStyle]} source={{ uri: item.imagePath }} />
           <View style={styles.listItemContentTextContainer}>
-            <ListItem.Title style={[themeTextStyle, styles.headerText]}>
+            <ListItem.Title adjustsFontSizeToFit numberOfLines={1} style={[themeTextStyle, styles.headerText]}>
               {item.title}
             </ListItem.Title>
-            <ListItem.Subtitle style={[themeTextStyle, styles.subHeaderText]}>
-              Up Next Season {item.currentSeason} Episode {item.upNextEpisode}{" "}
+            <ListItem.Subtitle adjustsFontSizeToFit numberOfLines={2} style={[themeTextStyle, styles.subHeaderText]}>
+              Up Next S{item.currentSeason}E{item.upNextEpisode}{" "}
               {"\n"}
               Episode {item.upNextEpisodeOutOfTotal} out of {item.totalEpisodes}{" "}
               episodes
             </ListItem.Subtitle>
           </View>
         </ListItem.Content>
-      </ListItemSwipeable>
+      </ListItem.Swipeable>
     );
   };
 
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     display: "flex",
     flexDirection: "row",
-    flex: 1,
   },
   lightThemeText: {
     color: "black",
@@ -158,9 +157,9 @@ const styles = StyleSheet.create({
     color: "white",
   },
   listItemContentTextContainer: {
-    paddingStart: 10,
-    flex: 0.7,
     marginVertical: "auto",
+    paddingHorizontal: 15,
+    marginEnd: 12
   },
   lightThemeContainer: {
     backgroundColor: "#EEEEEE",
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   headerText: {
-    fontSize: 25,
+    fontSize: 30,
   },
   image: {
     resizeMode: "center",
@@ -187,7 +186,8 @@ const styles = StyleSheet.create({
     borderColor: "#FFC107",
   },
   subHeaderText: {
-    fontSize: 14,
+    paddingTop: 4,
+    fontSize: 20,
   },
   sideButtonStyle: {
     minHeight: "100%",
