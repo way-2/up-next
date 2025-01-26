@@ -1,18 +1,10 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { View, StyleSheet, useColorScheme } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
+import { View } from "react-native";
 import databaseService from "../services/databaseService";
-import FilterListItem from "./filterListItem";
+import FlatList from "./flatListComponent";
 
 export default function filterScreen() {
-  const colorScheme = useColorScheme();
-  const themeTextStyle =
-    colorScheme === "light" ? styles.lightThemeText : styles.darkThemeText;
-  const themeContainerStyle =
-    colorScheme === "light"
-      ? styles.lightThemeContainer
-      : styles.darkThemeContainer;
   const db = new databaseService();
   db.initialize();
   const [loading, setLoading] = useState(false);
@@ -39,18 +31,7 @@ export default function filterScreen() {
 
   return (
     <View>
-      <FlatList data={items} renderItem={({item}) => <FilterListItem item={item} />}/>
+      <FlatList items={items} page={"filter"} refreshing={false} onRefresh={()=>('')} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#397af8",
-    marginBottom: 20,
-    width: "100%",
-    paddingVertical: 15,
-  },
-});

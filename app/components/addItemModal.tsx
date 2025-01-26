@@ -10,6 +10,7 @@ import { useDebounce } from "use-debounce";
 import WheelPicker from "@quidone/react-native-wheel-picker";
 import getTmdbService from "../services/tmdbService";
 import { calcEpisodeOfTotal, mapToJson } from "../util/utilMethods";
+import { upNextTableItem } from "../models/dbModels";
 
 export default function AddItemModalScreen() {
   const colorScheme = useColorScheme();
@@ -150,7 +151,8 @@ export default function AddItemModalScreen() {
         buttonStyle={styles.buttonStyle}
         title="Add Show"
         onPress={() => {
-          db.insertRecord(
+          const seasonInfoJson = mapToJson(seasonsInfo);
+          const item: upNextTableItem = {
             id,
             title,
             upNextEpisode,
@@ -158,9 +160,11 @@ export default function AddItemModalScreen() {
             totalEpisodes,
             upNextEpisodeOutOfTotal,
             imagePath,
-            mapToJson(seasonsInfo),
-            "tv"
-          )
+            seasonsInfo: seasonInfoJson,
+            type: "tv",
+            isVisible: true,
+          }
+          db.insertRecord(item)
             .then((res) => console.log(res))
             .catch((res) => console.log(res))
             .finally(() => navigation.goBack());

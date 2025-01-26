@@ -1,21 +1,21 @@
-import { useCallback, useState } from "react";
-import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  useColorScheme,
-  View,
-} from "react-native";
-import { Button, Image, ListItem } from "react-native-elements";
-import ListItemSwipeable from "react-native-elements/dist/list/ListItemSwipeable";
-import databaseService, { dbItem } from "./services/databaseService";
+import { useCallback, useEffect, useState } from "react";
+import { Image, StyleSheet, useColorScheme, View } from "react-native";
+import databaseService from "./services/databaseService";
 import { useFocusEffect } from "@react-navigation/native";
 import React from "react";
-import { Configuration, DefaultApi } from "./generated-sources/openapi";
-import getTmdbService from "./services/tmdbService";
-import { calcEpisodeOfTotal, mapToJson } from "./util/utilMethods";
+import { upNextTableItem } from "./models/dbModels";
+import { FlatList, RefreshControl } from "react-native-gesture-handler";
+import ListItemSwipeable from "react-native-elements/dist/list/ListItemSwipeable";
+import { Button, ListItem } from "react-native-elements";
 
 export default function Index() {
+  const db = new databaseService();
+  db.initialize();
+  const [items, setItems] = useState<upNextTableItem[]>([]);
+  const filteredItems: upNextTableItem[] =
+    items.length > 0 ? items.filter((item) => item.isVisible) : [];
+  const [refreshData, setRefreshData] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const colorScheme = useColorScheme();
   const themeTextStyle =
     colorScheme === "light" ? styles.lightThemeText : styles.darkThemeText;
@@ -23,127 +23,117 @@ export default function Index() {
     colorScheme === "light"
       ? styles.lightThemeContainer
       : styles.darkThemeContainer;
-  const db = new databaseService();
-  db.initialize();
-  const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState([]);
-  const [refreshData, setRefreshData] = useState(true);
-  const tmdbApi = getTmdbService();
+    const themeImageBorderStyle =
+    colorScheme === "light"
+      ? styles.imageBorderLight
+      : styles.imageBorderDark;
 
   useFocusEffect(
     useCallback(() => {
-      setup();
-    }, [!loading && refreshData])
+      console.log("refreshing useFocusEffect");
+      getRowsFromDatabase();
+    }, [])
   );
 
-  async function setup() {
-    setRefreshData(true);
-    setLoading(true);
+  useEffect(() => {
+    if (refreshData) {
+      console.debug(
+        "Refreshing items from database, called from useEffect in index, refreshData is: {}, items before call: {}",
+        refreshData,
+        items
+      );
+      getRowsFromDatabase();
+    }
+  }, [refreshData]);
+
+  function getRowsFromDatabase() {
+    setIsLoading(true);
+    db.getAllRows()
+      .then((res) => {
+        setItems(res as upNextTableItem[]);
+        console.log("items retrieved from database: {}", items);
+        setRefreshData(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching data: ", error);
+        setRefreshData(false);
+      });
+    setIsLoading(false);
+  }
+
+  async function deleteRow(item: upNextTableItem) {
     try {
-      await db.initialize();
-      const result = await db.getAllRows();
-      setItems(result);
+      setIsLoading(true);
+      await db.deleteRecord(item).finally(() => setRefreshData(true));
     } catch (error) {
       console.error(error);
     } finally {
-      setRefreshData(false);
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
-  async function removeItem(id: string) {
+  async function increaseCount(item: upNextTableItem) {
     try {
-      await db.deleteRecord(id);
-      setup();
+      setIsLoading(true);
+      await db.increaseUpNextCount(item);
+      setRefreshData(true);
     } catch (error) {
       console.error(error);
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  async function updateUpNext(id: string) {
-    try {
-      await db.increaseUpNextCount(id);
-      setup();
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  const buildListItem = (item: {
-    id: string;
-    title: string;
-    upNextEpisode: number;
-    currentSeason: number;
-    totalEpisodes: number;
-    upNextEpisodeOutOfTotal: number;
-    imagePath: string;
-    isVisible: boolean,
-  }) => (
-    <ListItemSwipeable
-      containerStyle={themeContainerStyle}
-      leftContent={
-        <Button
-          title="Remove"
-          onPress={() => removeItem(item.id)}
-          icon={{ name: "delete", color: "white" }}
-          buttonStyle={{ minHeight: "100%" }}
-        />
-      }
-      rightContent={
-        <Button
-          title="Update Up Next"
-          onPress={() => updateUpNext(item.id)}
-          icon={{ name: "arrow-upward", color: "white" }}
-          buttonStyle={{ minHeight: "100%", backgroundColor: "red" }}
-        />
-      }
-    >
-      <ListItem.Content
-        style={[styles.listItemContentContainer, themeContainerStyle]}
+  const buildListItem = (item: upNextTableItem) => {
+    if (!item) return null;
+    return (
+      <ListItemSwipeable
+        containerStyle={themeContainerStyle}
+        leftContent={
+          <Button
+            title="Remove"
+            onPress={() => deleteRow(item)}
+            icon={{ name: "delete", color: "white" }}
+            buttonStyle={[styles.sideButtonStyle, { backgroundColor: '#006B94' }]}
+          />
+        }
+        rightContent={
+          <Button
+            title="Increase Episode"
+            onPress={() => increaseCount(item)}
+            icon={{ name: "arrow-upward", color: "white" }}
+            buttonStyle={[styles.sideButtonStyle, { backgroundColor: '#006B94' }]}
+          />
+        }
       >
-        <Image style={styles.image} source={{ uri: item.imagePath }} />
-        <View style={styles.listItemContentTextContainer}>
-          <ListItem.Title style={[themeTextStyle, styles.headerText]}>{item.title}</ListItem.Title>
-          <ListItem.Subtitle style={[themeTextStyle, styles.subHeaderText]}>
-            Up Next Season {item.currentSeason} Episode {item.upNextEpisode}{" "}
-            {"\n"}
-            Episode {item.upNextEpisodeOutOfTotal} out of {item.totalEpisodes}{" "}
-            episodes
-          </ListItem.Subtitle>
-        </View>
-      </ListItem.Content>
-    </ListItemSwipeable>
-  );
-
-  async function refreshDataFromTmdb() {
-    items.forEach(async (item: dbItem) => {
-      await tmdbApi.tvSeriesDetails(item.id).then((res) => {
-        var tempSeasons = new Map();
-        res.data.seasons?.forEach((season) => {
-          if (season.season_number !== undefined && season.season_number > 0) {
-            var tempEpisodes = [...Array(season.episode_count).keys()].map(
-              (foo) => foo + 1
-            );
-            tempSeasons.set(season.season_number, tempEpisodes);
-          }
-        });
-        item.seasonsInfo = mapToJson(tempSeasons);
-        item.totalEpisodes = res.data.number_of_episodes ?? 0;
-        item.imagePath = "https://image.tmdb.org/t/p/w500/" + res.data.poster_path;
-        item.upNextEpisodeOutOfTotal = calcEpisodeOfTotal(tempSeasons, item.currentSeason, item.upNextEpisode);
-      }).catch((ex) => console.log(ex));
-    });
-  }
+        <ListItem.Content style={styles.listItemContentContainer}>
+          <Image style={[styles.image,themeImageBorderStyle]} source={{ uri: item.imagePath }} />
+          <View style={styles.listItemContentTextContainer}>
+            <ListItem.Title style={[themeTextStyle, styles.headerText]}>
+              {item.title}
+            </ListItem.Title>
+            <ListItem.Subtitle style={[themeTextStyle, styles.subHeaderText]}>
+              Up Next Season {item.currentSeason} Episode {item.upNextEpisode}{" "}
+              {"\n"}
+              Episode {item.upNextEpisodeOutOfTotal} out of {item.totalEpisodes}{" "}
+              episodes
+            </ListItem.Subtitle>
+          </View>
+        </ListItem.Content>
+      </ListItemSwipeable>
+    );
+  };
 
   return (
     <FlatList
       refreshControl={
         <RefreshControl
-          refreshing={refreshData}
-          onRefresh={refreshDataFromTmdb}
+          refreshing={isLoading}
+          onRefresh={() => setRefreshData(true)}
         />
       }
-      data={items.filter(item => item.isVisible)}
+      data={filteredItems}
       renderItem={({ item }) => buildListItem(item)}
       ItemSeparatorComponent={() => <View style={styles.seperator} />}
       contentContainerStyle={{ padding: 4, margin: 0 }}
@@ -152,23 +142,14 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
+  seperator: {
+    height: 3,
+  },
   listItemContentContainer: {
-    width: "100%",
+    justifyContent: "flex-start",
     display: "flex",
     flexDirection: "row",
     flex: 1,
-    flexWrap: "nowrap",
-    alignItems: "flex-start",
-    paddingStart: 0,
-  },
-  seperator: {
-    height: 2,
-  },
-  image: {
-    display: "flex",
-    padding: 0,
-    width: 80,
-    height: 120,
   },
   lightThemeText: {
     color: "black",
@@ -177,30 +158,54 @@ const styles = StyleSheet.create({
     color: "white",
   },
   listItemContentTextContainer: {
+    paddingStart: 10,
+    flex: 0.7,
+    marginVertical: "auto",
+  },
+  listItemCheckboxContainer: {
     height: "100%",
     paddingStart: 10,
     display: "flex",
-    flex: 0.8,
-    alignSelf: "center",
+    flex: 0.5,
+    alignSelf: "flex-end",
+    alignItems: "flex-end",
   },
   lightThemeContainer: {
-    color: "white",
-    backgroundColor: "white",
+    backgroundColor: "#EEEEEE",
+    borderWidth: 0,
   },
   darkThemeContainer: {
-    backgroundColor: "grey",
-    color: "grey",
+    backgroundColor: "#181818",
+    borderWidth: 0,
   },
   headerText: {
-    fontSize: 25
+    fontSize: 25,
+  },
+  image: {
+    resizeMode: "center",
+    width: 80,
+    height: 120,
+    borderWidth: 2,
+    borderRadius: 4,
+  },
+  imageBorderLight: {
+    borderColor: "#FFC107",
+  },
+  imageBorderDark: {
+    borderColor: "#FFC107",
   },
   subHeaderText: {
-    fontSize: 14
+    fontSize: 14,
   },
   show: {
-    visibility: 'Visible'
+    visibility: "Visible",
   },
   hide: {
-    visibility: 'Hidden'
+    visibility: "Hidden",
+  },
+  sideButtonStyle: {
+    minHeight: "100%",
+    flexWrap: 'wrap',
+    alignContent: 'center'
   }
 });

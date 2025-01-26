@@ -1,4 +1,6 @@
 import * as SQLite from "expo-sqlite";
+import { upNextTableItem } from "../models/dbModels";
+import { jsonToMap } from "../util/utilMethods";
 
 export default class databaseService {
   db: SQLite.SQLiteDatabase | null;
@@ -9,8 +11,8 @@ export default class databaseService {
 
   // Initialize and set up the database
   async initialize() {
-    this.db = await SQLite.openDatabaseAsync("upNextDb");
-    await this.db.execAsync(`
+    this.db = await SQLite.openDatabaseSync("upNextDb");
+    await this.db.execSync(`
         PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS upNext (
           id INTEGER PRIMARY KEY NOT NULL,
@@ -28,129 +30,120 @@ export default class databaseService {
   }
 
   // Insert a new record
-  async insertRecord(
-    id: number,
-    title: string,
-    upNextEpisode: number,
-    currentSeason: number,
-    totalEpisodes: number,
-    upNextEpisodeOutOfTotal: number,
-    imagePath: string,
-    seasonsInfo: string,
-    type: string
-  ) {
-    const result = await this.db.runAsync(
-      "INSERT INTO upNext (id, title, upNextEpisode, currentSeason, totalEpisodes, upNextEpisodeOutOfTotal, imagePath, seasonsInfo, type, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      id,
-      title,
-      upNextEpisode,
-      currentSeason,
-      totalEpisodes,
-      upNextEpisodeOutOfTotal,
-      imagePath,
-      seasonsInfo,
-      type,
-      true
-    );
-    return result;
+  async insertRecord(item: upNextTableItem) {
+    return new Promise((resolve, reject) => {
+      this.db?.withTransactionAsync(async () => {
+        await this.db
+          ?.runAsync(
+            "INSERT INTO upNext (id, title, upNextEpisode, currentSeason, totalEpisodes, upNextEpisodeOutOfTotal, imagePath, seasonsInfo, type, isVisible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            item.id,
+            item.title,
+            item.upNextEpisode,
+            item.currentSeason,
+            item.totalEpisodes,
+            item.upNextEpisodeOutOfTotal,
+            item.imagePath,
+            item.seasonsInfo,
+            item.type,
+            item.isVisible
+          )
+          .then((result: unknown) => resolve(result))
+          .catch((error: any) => reject(error));
+      });
+    });
   }
 
-  async updateRecord(
-    id: number,
-    title: string,
-    upNextEpisode: number,
-    currentSeason: number,
-    totalEpisodes: number,
-    upNextEpisodeOutOfTotal: number,
-    imagePath: string,
-    seasonsInfo: string,
-    isVisible: boolean
-  ) {
-    const result = await this.db.runAsync(
-      "UPDATE upNext SET title = ?, upNextEpisode = ?, currentSeason = ?, totalEpisodes = ?, upNextEpisodeOutOfTotal = ?, imagePath = ?, seasonsInfo = ?, isVisible: ? WHERE id = ?",
-      title,
-      upNextEpisode,
-      currentSeason,
-      totalEpisodes,
-      upNextEpisodeOutOfTotal,
-      imagePath,
-      seasonsInfo,
-      isVisible,
-      id
-    );
-    return result;
+  async updateRecord(item: upNextTableItem): Promise<upNextTableItem> {
+    return new Promise((resolve, reject) => {
+      this.db?.withTransactionAsync(async () => {
+        await this.db
+          ?.runAsync(
+            "UPDATE upNext SET title = ?, upNextEpisode = ?, currentSeason = ?, totalEpisodes = ?, upNextEpisodeOutOfTotal = ?, imagePath = ?, seasonsInfo = ?, type = ?, isVisible = ? WHERE id = ?",
+            item.title,
+            item.upNextEpisode,
+            item.currentSeason,
+            item.totalEpisodes,
+            item.upNextEpisodeOutOfTotal,
+            item.imagePath,
+            item.seasonsInfo,
+            item.isVisible,
+            item.id
+          )
+          .then((result: unknown) => resolve(result as upNextTableItem))
+          .catch((error: any) => reject(error));
+      });
+    });
   }
 
-  async updateVisibility(id: number, isVisible: boolean) {
-    await this.db.runAsync(
-      "UPDATE upNext SET isVisible= ? WHERE id = ?",
-      isVisible,
-      id
-    );
+  async updateVisibility(item: upNextTableItem) {
+    return new Promise((resolve, reject) => {
+      this.db?.withTransactionAsync(async () => {
+        await this.db
+          ?.runAsync(
+            "UPDATE upNext SET isVisible= ? WHERE id = ?",
+            item.isVisible,
+            item.id
+          )
+          .then((result: unknown) => resolve(result))
+          .catch((error: any) => reject(error));
+      });
+    });
   }
 
   // Delete a record
-  async deleteRecord(id: string) {
-    await this.db.runAsync("DELETE FROM upNext WHERE id = ?", id);
+  async deleteRecord(item: upNextTableItem) {
+    return new Promise((resolve, reject) => {
+      this.db?.withTransactionAsync(async () => {
+        await this.db
+          ?.runAsync("DELETE FROM upNext WHERE id = ?", item.id)
+          .then((result: unknown) => resolve(result))
+          .catch((error: any) => reject(error));
+      });
+    });
   }
 
   // Get all rows
   async getAllRows() {
-    const allRows = await this.db.getAllAsync("SELECT * FROM upNext");
-    return allRows;
+    return new Promise<upNextTableItem[]>((resolve, reject) => {
+      this.db
+        ?.getAllAsync("SELECT * FROM upNext ORDER BY title ASC")
+        .then((result: unknown) => {
+          resolve(result);
+        })
+        .catch((error: any) => reject(error));
+    });
   }
 
-  jsonToMap(jsonStr: string): Map<number, number[]> {
-    const obj = JSON.parse(jsonStr);
-    return new Map<number, number[]>(
-      Object.entries(obj).map(([key, value]) => [Number(key), value])
-    );
-  }
+  async increaseUpNextCount(item: upNextTableItem): Promise<upNextTableItem> {
+    const seasonsMap = jsonToMap(item.seasonsInfo);
 
-  async increaseUpNextCount(id: string) {
-    try {
-      const result = await this.db.getFirstSync(
-        "SELECT * FROM upNext WHERE id = ?",
-        id
-      );
-      var item = result as dbItem;
-      const seasonsMap = this.jsonToMap(item.seasonsInfo);
+    // Increase upNextEpisode
+    item.upNextEpisode += 1;
+    item.upNextEpisodeOutOfTotal += 1;
 
-      // Increase upNextEpisode
-      item.upNextEpisode += 1;
-      item.upNextEpisodeOutOfTotal += 1;
-
-      // Check if we need to move to the next season
-      const episodesInCurrentSeason = seasonsMap.get(item.currentSeason) || [];
-      if (item.upNextEpisode > episodesInCurrentSeason.length) {
-        item.upNextEpisode = 1;
-        item.currentSeason += 1;
-      }
-
-      //Update the record in the database
-      await this.db.runAsync(
-        "UPDATE upNext SET upNextEpisode = ?, currentSeason = ?, upNextEpisodeOutOfTotal = ? WHERE id = ?",
-        item.upNextEpisode,
-        item.currentSeason,
-        item.upNextEpisodeOutOfTotal,
-        id
-      );
-    } catch (e) {
-      console.log(e);
+    // Check if we need to move to the next season
+    const episodesInCurrentSeason = seasonsMap.get(item.currentSeason) || [];
+    if (item.upNextEpisode > episodesInCurrentSeason.length) {
+      item.upNextEpisode = 1;
+      item.currentSeason += 1;
     }
-  }
-}
 
-export interface dbItem {
-  id: number;
-  title: string;
-  upNextEpisode: number;
-  currentSeason: number;
-  totalEpisodes: number;
-  upNextEpisodeOutOfTotal: number;
-  imagePath: string;
-  seasonsInfo: string;
-  isVisible: boolean,
-  type: string, 
-  orderMarker: number
+    // Update the record in the database
+    return new Promise((resolve, reject) => {
+      this.db?.withTransactionAsync(async () => {
+        await this.db
+          ?.runAsync(
+            "UPDATE upNext SET upNextEpisode = ?, currentSeason = ?, upNextEpisodeOutOfTotal = ? WHERE id = ?",
+            [
+              item.upNextEpisode,
+              item.currentSeason,
+              item.upNextEpisodeOutOfTotal,
+              item.id,
+            ]
+          )
+          .then((result: unknown) => resolve(result))
+          .catch((error) => reject(error));
+      });
+    });
+  }
 }
