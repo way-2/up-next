@@ -10,7 +10,8 @@ import { useFonts } from "expo-font";
 import { SQLiteProvider } from "expo-sqlite";
 import Header from "./components/header";
 import NavigationDrawer from "./components/navigationDrawer";
-import { useColorScheme } from "react-native";
+import { Platform, useColorScheme } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -58,6 +59,7 @@ function RootLayoutNav() {
         <Header />
         <NavigationDrawer />
       </SQLiteProvider>
+      <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
     </ThemeProvider>
   );
 }

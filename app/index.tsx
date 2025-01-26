@@ -162,14 +162,6 @@ const styles = StyleSheet.create({
     flex: 0.7,
     marginVertical: "auto",
   },
-  listItemCheckboxContainer: {
-    height: "100%",
-    paddingStart: 10,
-    display: "flex",
-    flex: 0.5,
-    alignSelf: "flex-end",
-    alignItems: "flex-end",
-  },
   lightThemeContainer: {
     backgroundColor: "#EEEEEE",
     borderWidth: 0,
@@ -196,12 +188,6 @@ const styles = StyleSheet.create({
   },
   subHeaderText: {
     fontSize: 14,
-  },
-  show: {
-    visibility: "Visible",
-  },
-  hide: {
-    visibility: "Hidden",
   },
   sideButtonStyle: {
     minHeight: "100%",

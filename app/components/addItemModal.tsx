@@ -1,5 +1,4 @@
-import { StatusBar } from "expo-status-bar";
-import { Platform, StyleSheet, View, Text, useColorScheme } from "react-native";
+import { StyleSheet, View, Text, useColorScheme } from "react-native";
 import { Button, Icon } from "react-native-elements";
 import databaseService from "../services/databaseService";
 import { useState } from "react";
@@ -16,10 +15,14 @@ export default function AddItemModalScreen() {
   const colorScheme = useColorScheme();
   const themeTextStyle =
     colorScheme === "light" ? styles.lightThemeText : styles.darkThemeText;
-  const themeContainerStyle =
-    colorScheme === "light"
-      ? styles.lightThemeContainer
-      : styles.darkThemeContainer;
+const themeContainerStyle =
+  colorScheme === "light"
+    ? styles.lightThemeContainer
+    : styles.darkThemeContainer;
+  const themeBackgroundColor =
+  colorScheme === "light"
+    ? styles.lightThemeBackground
+    : styles.darkThemeBackground;
   const db = new databaseService();
   db.initialize();
   const tmdbApi = getTmdbService();
@@ -89,14 +92,15 @@ export default function AddItemModalScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Add an Item</Text>
+    <View style={[styles.container,themeBackgroundColor]}>
+      <Text style={[styles.title, themeTextStyle]}>Add an Item</Text>
       <Dropdown
         style={[styles.dropdown, themeContainerStyle]}
         placeholderStyle={[styles.placeholderStyle, themeTextStyle]}
         selectedTextStyle={[styles.selectedTextStyle, themeTextStyle]}
         inputSearchStyle={[styles.inputSearchStyle, themeTextStyle]}
         containerStyle={themeContainerStyle}
+        itemTextStyle={[themeTextStyle]}
         itemContainerStyle={themeContainerStyle}
         iconStyle={styles.iconStyle}
         data={searchResults}
@@ -116,12 +120,13 @@ export default function AddItemModalScreen() {
       />
       <View style={styles.twoColumnContainer}>
         <View style={styles.columnContainer}>
-          <Text>Current Season</Text>
+          <Text style={[styles.wheelTextStyle, themeTextStyle]}>Current Season</Text>
           <WheelPicker
-            width={50}
+            width={100}
+            itemHeight={60}
             style={[styles.wheelPicker, themeContainerStyle]}
             overlayItemStyle={[styles.wheelPickerOverlay, themeTextStyle]}
-            itemTextStyle={themeTextStyle}
+            itemTextStyle={[styles.wheelPickerText, themeTextStyle]}
             visibleItemCount={3}
             data={pickerSeasons}
             onValueChanged={(value) => {
@@ -131,12 +136,13 @@ export default function AddItemModalScreen() {
           />
         </View>
         <View style={styles.columnContainer}>
-          <Text>Current Episode</Text>
+          <Text style={[styles.wheelTextStyle, themeTextStyle]}>Current Episode</Text>
           <WheelPicker
-            width={50}
+            width={100}
+            itemHeight={60}
             style={[styles.wheelPicker, themeContainerStyle]}
             overlayItemStyle={[styles.wheelPickerOverlay, themeTextStyle]}
-            itemTextStyle={themeTextStyle}
+            itemTextStyle={[styles.wheelPickerText, themeTextStyle]}
             visibleItemCount={3}
             data={pickerEpisodes}
             onValueChanged={(value) => {
@@ -170,13 +176,23 @@ export default function AddItemModalScreen() {
             .finally(() => navigation.goBack());
         }}
       />
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wheelPickerText: {
+    fontSize: 40
+  },
+  wheelTextStyle: {
+    paddingBottom: 16
+  },
+  lightThemeBackground: {
+    backgroundColor: "white"
+  },
+  darkThemeBackground: {
+    backgroundColor: "#121212"
+  },
   container: {
     display: "flex",
     flexDirection: "column",
@@ -187,7 +203,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     textAlign: "center",
     fontSize: 20,
-    fontWeight: "bold",
   },
   dropdown: {
     width: "95%", // Adjust the width as needed
@@ -195,9 +210,6 @@ const styles = StyleSheet.create({
     height: 50,
     borderBottomColor: "grey",
     borderBottomWidth: 1,
-  },
-  icon: {
-    marginRight: 5,
   },
   placeholderStyle: {
     fontSize: 16,
@@ -251,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   darkThemeContainer: {
-    backgroundColor: "grey",
-    color: "grey",
+    backgroundColor: "#181818",
+    color: "#181818",
   },
 });
